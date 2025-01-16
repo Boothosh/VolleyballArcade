@@ -1,4 +1,4 @@
-### Volleyball Arcade Game ###
+### Volleyball Arcade Game 🎮👾###
 - First finished mini-game
 - Written in zig as a first contact point with the language
 - Inspired by the game DOS arcade volleyball
