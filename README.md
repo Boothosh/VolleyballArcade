@@ -2,6 +2,7 @@
 - First finished mini-game
 - Written in zig as a first contact point with the language
 - Inspired by the game DOS arcade volleyball
+- Inspired by the YouTuber jdh who also build an arcade game in a livestream as a first contact point with zig
   
 In the game "A way out" is a scene where you are able to play an interpretation of DOS arcade volleyball on an arcade cabinet. My game is strongly inspired by their design choices.
 

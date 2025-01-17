@@ -25,6 +25,8 @@ var frameCount: i32 = 0;
 var pauseSince: f64 = 0;
 var shootBallLeft = false;
 var lastBeepedNumber: f64 = 4;
+var showFPS: bool = true;
+var reverseJump: bool = false;
 
 // Player
 // Position
@@ -124,7 +126,7 @@ pub fn main() anyerror!void {
                 }
 
                 // Player 1 Jump
-                if (rl.isKeyDown(.w) and player1Y == 0) {
+                if ((rl.isKeyDown(.w) and player1Y == 0 and !reverseJump) or (reverseJump and rl.isKeyDown(.i) and player1Y == 0)) {
                     player1MY = 2;
                     player1Y += BALL_GRAVITY_CONSTANT * player1MY;
                 } else if (player1Y != 0) {
@@ -145,7 +147,7 @@ pub fn main() anyerror!void {
                 }
 
                 // Player 2 Jump
-                if (rl.isKeyDown(.i) and player2Y == 0) {
+                if ((rl.isKeyDown(.i) and player2Y == 0 and !reverseJump) or (reverseJump and rl.isKeyDown(.w) and player2Y == 0)) {
                     player2MY = 2;
                     player2Y += BALL_GRAVITY_CONSTANT * player2MY;
                 } else if (player2Y != 0) {
@@ -323,6 +325,22 @@ pub fn main() anyerror!void {
             if (rl.isKeyDown(rl.KeyboardKey.enter)) {
                 startGame();
             }
+
+            if (rl.isKeyPressed(.f)) {
+                showFPS = !showFPS;
+            }
+            if (rl.isKeyPressed(.space)) {
+                reverseJump = !reverseJump;
+            }
+        }
+        var buffer = [_]u8{undefined} ** 10;
+        if (showFPS) {
+            const fpsText = try std.fmt.bufPrintZ(&buffer, "{d} FPS", .{@ceil((1 / rl.getFrameTime()))});
+            rl.drawText(fpsText, 15, 15, 15, WHITE);
+        }
+        if (reverseJump) {
+            const reverseJumpText = rl.measureText("Reverse", 15);
+            rl.drawText("Reverse", WINDOW_WIDTH - 15 - reverseJumpText, 15, 15, WHITE);
         }
     }
 }
@@ -339,8 +357,6 @@ pub fn drawGameLayout() !void {
     const player2ScoreText = try std.fmt.bufPrintZ(&buffer, "{} / 7", .{player2Score});
     const sizeOfText = rl.measureTextEx(rl.getFontDefault(), player2ScoreText, 25, 0);
     rl.drawText(player2ScoreText, WINDOW_WIDTH - LINE_THICKNESS * 4 - @as(i32, @intFromFloat(sizeOfText.x)), LINE_THICKNESS * 3, 25, WHITE);
-    const fpsText = try std.fmt.bufPrintZ(&buffer, "{d} FPS", .{@ceil((1 / rl.getFrameTime()))});
-    rl.drawText(fpsText, 15, 15, 15, WHITE);
     if (player1Score == 6 or player2Score == 6) {
         const sizeOfMatchpointText = rl.measureTextEx(rl.getFontDefault(), "Match point", 25, 0);
         rl.drawText("Match point", @as(i32, @intFromFloat((WINDOW_WIDTH - sizeOfMatchpointText.x) / 2)), LINE_THICKNESS * 3, 25, ACCENTCOLOR);
