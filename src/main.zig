@@ -27,6 +27,8 @@ var shootBallLeft = false;
 var lastBeepedNumber: f64 = 4;
 var showFPS: bool = true;
 var reverseJump: bool = false;
+var ballHadCollisionLastFrame: bool = false;
+var ballHasCollisionThisFrame: bool = false;
 
 // Player
 // Position
@@ -34,11 +36,6 @@ var player1X: f64 = 0;
 var player1Y: f64 = 0;
 var player2X: f64 = 0;
 var player2Y: f64 = 0;
-// Last position
-var player1X_l: f64 = 0;
-var player1Y_l: f64 = 0;
-var player2X_l: f64 = 0;
-var player2Y_l: f64 = 0;
 // Movement
 var player1MY: f64 = 0;
 var player2MY: f64 = 0;
@@ -110,11 +107,6 @@ pub fn main() anyerror!void {
 
                 const newBallX: f64 = ballX + ballMX;
                 const newBallY: f64 = ballY + ballMY;
-
-                player1X_l = player1X;
-                player1Y_l = player1Y;
-                player2X_l = player2X;
-                player2Y_l = player2Y;
 
                 // Player 1
                 if (rl.isKeyDown(.a)) {
@@ -215,8 +207,12 @@ pub fn main() anyerror!void {
                 }
 
                 // Check for ball-player collision
+                ballHasCollisionThisFrame = false;
                 checkPlayerCollision(true, newBallX, newBallY);
                 checkPlayerCollision(false, newBallX, newBallY);
+                if (!ballHasCollisionThisFrame) {
+                    ballHadCollisionLastFrame = false;
+                }
 
                 if (stayLeftFrom - BALL_RADIUS > ballX + ballMX and stayRightFrom + BALL_RADIUS < ballX + ballMX) {
                     ballX += ballMX;
@@ -390,65 +386,72 @@ pub fn checkPlayerCollision(playerNumberOne: bool, newBallX: f64, newBallY: f64)
     const playerRightX = playerLeftX + PLAYER_WIDTH;
     const playerTopY = WINDOW_HEIGHT - LINE_THICKNESS - PLAYER_HEIGHT - (if (playerNumberOne) player1Y else player2Y);
     if (rl.checkCollisionCircleRec(Vector2.init(@floatCast(newBallX), @floatCast(newBallY)), BALL_RADIUS, rl.Rectangle.init(@floatCast(playerLeftX), @floatCast(playerTopY), PLAYER_WIDTH, PLAYER_HEIGHT))) {
-        // Collision detected!
-        const playerLeftX_l = (if (playerNumberOne) player1X_l else player2X_l) - PLAYER_WIDTH / 2;
-        const playerRightX_l = playerLeftX_l + PLAYER_WIDTH;
-        const playerTopY_l = WINDOW_HEIGHT - LINE_THICKNESS - PLAYER_HEIGHT - (if (playerNumberOne) player1Y_l else player2Y_l);
-        const directionVectorLenght = @sqrt((ballMX * ballMX) + (ballMY * ballMY));
-        const normedDirectionVector = Vector2.init(@as(f32, @floatCast(ballMX / directionVectorLenght)), @as(f32, @floatCast(ballMY / directionVectorLenght)));
-        const collisionPoint = Vector2.init(@as(f32, @floatCast(ballX + BALL_RADIUS * normedDirectionVector.x)), @as(f32, @floatCast(ballY + BALL_RADIUS * normedDirectionVector.y)));
-        if (collisionPoint.x < playerLeftX_l) {
-            stayLeftFrom = playerLeftX;
-            if (newBallY < playerTopY_l) {
-                std.debug.print("corner", .{});
-                // On the corner
+        ballHasCollisionThisFrame = true;
+        if (!ballHadCollisionLastFrame) {
+            // Collision detected!
+            const distanceToPlayerLeft = playerLeftX - newBallX;
+            const distanceToPlayerRight = newBallX - playerRightX;
+            const distanceToPlayerTop = playerTopY - newBallY;
+            if (distanceToPlayerLeft > 0 and distanceToPlayerLeft <= BALL_RADIUS) {
+                if (distanceToPlayerTop > 0 and distanceToPlayerTop <= BALL_RADIUS) {
+                    // On the corner
+                    if (ballMY > 0) {
+                        ballMY = -ballMY;
+                    }
+                    ballMY -= 0.3 * player2MY;
+                    // Check if it should switch x direction
+                    if (ballMX > 0) {
+                        ballMX = -ballMX;
+                    } else {
+                        ballMX *= 1.5;
+                    }
+                } else {
+                    stayLeftFrom = playerLeftX;
+                    ballMX = -ballMX;
+                }
+            } else if (distanceToPlayerRight > 0 and distanceToPlayerRight <= BALL_RADIUS) {
+                if (distanceToPlayerTop > 0 and distanceToPlayerTop <= BALL_RADIUS) {
+                    // On the corner
+                    if (ballMY > 0) {
+                        ballMY = -ballMY;
+                    }
+                    ballMY -= 0.3 * player2MY;
+                    stayOverHight = playerTopY;
+                    // Check if it should switch x direction
+                    if (ballMX < 0) {
+                        ballMX = -ballMX;
+                    } else {
+                        ballMX *= 1.5;
+                    }
+                } else {
+                    stayRightFrom = playerRightX;
+                    ballMX = -ballMX;
+                }
+            } else if (distanceToPlayerTop > 0 and distanceToPlayerTop <= BALL_RADIUS) {
+                // Top
                 if (ballMY > 0) {
                     ballMY = -ballMY;
                 }
                 ballMY -= 0.3 * player2MY;
                 stayOverHight = playerTopY;
-                // Check if it should switch x direction
-                if (ballMX > 0) {
-                    ballMX = -ballMX;
-                } else {
-                    ballMX *= 1.5;
-                }
             } else {
-                std.debug.print("left", .{});
-                ballMX = -ballMX;
-            }
-        } else if (collisionPoint.x > playerRightX_l) {
-            stayLeftFrom = playerRightX;
-            if (newBallY < playerTopY_l) {
-                std.debug.print("Corner", .{});
-                // On the corner
-                if (ballMY > 0) {
-                    ballMY = -ballMY;
-                }
-                ballMY -= 0.3 * player2MY;
-                stayOverHight = playerTopY;
-                // Check if it should switch x direction
-                if (ballMX < 0) {
+                std.debug.print("unusual\n", .{});
+                if (distanceToPlayerLeft > distanceToPlayerTop or distanceToPlayerRight > distanceToPlayerTop) {
                     ballMX = -ballMX;
+                    if (distanceToPlayerLeft > distanceToPlayerRight) {
+                        stayLeftFrom = playerLeftX;
+                    } else {
+                        stayRightFrom = playerRightX;
+                    }
                 } else {
-                    ballMX *= 1.5;
+                    if (ballMY > 0) {
+                        ballMY = -ballMY;
+                    }
+                    stayOverHight = playerTopY;
+                    ballMY -= 0.3 * player2MY;
                 }
-            } else {
-                std.debug.print("Right", .{});
-                ballMX = -ballMX;
             }
-        } else {
-            std.debug.print("top top\n", .{});
-            std.debug.print("Player Left X {}", .{playerLeftX});
-            std.debug.print("Player Right X {}", .{playerRightX});
-            std.debug.print("Collision point x: {}, y: {}", .{ collisionPoint.x, collisionPoint.y });
-            // Top
-            if (ballMY > 0) {
-                ballMY = -ballMY;
-            }
-            ballMY -= 0.3 * player2MY;
-            stayOverHight = playerTopY;
+            rl.playSound(sound.playerCollision);
         }
-        rl.playSound(sound.playerCollision);
     }
 }
