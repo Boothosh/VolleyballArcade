@@ -20,6 +20,8 @@ I found out (through a mistake), that the game is actually funnier if you contro
 You can enable this behavior by pressing the space key before your match starts.
 The same way you can show/hide FPS count by pressing f before your match starts.
 
+You can build this project from source by running `zig build` and `./zig-out/bin/VolleyballArcade` (on Mac).
+
 <img width="816" alt="Screenshot 2025-01-16 at 19 13 46" src="https://github.com/user-attachments/assets/cb5c3325-556a-43d6-bf98-4f5034670247" />
 <img width="834" alt="Screenshot 2025-01-16 at 19 15 33" src="https://github.com/user-attachments/assets/5f53d480-3c46-4d76-bdf8-7a8861561f1f" />
 <img width="829" alt="Screenshot 2025-01-16 at 19 15 26" src="https://github.com/user-attachments/assets/34c3d446-585c-430d-b70c-0e5c0b806180" />
